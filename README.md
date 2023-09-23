@@ -46,7 +46,8 @@ returned response:   {
       "openSea": {
         "floorPrice":0.8,
         "priceCurrency":"ETH",
-        "collectionUrl":"https://opensea.io/collection/world-of-women-nft","retrievedAt":"2023-09-23T11:28:27.198Z"
+        "collectionUrl":"https://opensea.io/collection/world-of-women-nft",
+        "retrievedAt":"2023-09-23T11:28:27.198Z"
       },
       "looksRare": {
         "floorPrice":0.94,
