@@ -6,22 +6,13 @@ import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 
 /**
  * @title AurumCLient
- * @dev API consumer contract to get floor price from oracle
  */
 
 contract AurumCLient is ChainlinkClient, ConfirmedOwner {
     using Chainlink for Chainlink.Request;
-    address public oracle;
-    string public jobId;
 
-    struct FloorPrice {
-        uint256 floorPrice;
-        uint256 deadline;
-    }
-
-    mapping(address => FloorPrice) private tokenToFloorPrice;
-    uint256 private constant ORACLE_PAYMENT = (1 * LINK_DIVISIBILITY) / 1000; // 0.001 ETH (link token)
-    uint256 public constant DEADLINE = 1 days;
+    uint256 private constant ORACLE_PAYMENT = (1 * LINK_DIVISIBILITY) / 1000; // 0.001 * 10**18
+    uint256 public lastRetrievedInfo;
 
     event RequestFloorPrice(bytes32 indexed requestId, uint256 floorPrice);
 
@@ -30,35 +21,29 @@ contract AurumCLient is ChainlinkClient, ConfirmedOwner {
      * @dev LINK address in Sepolia network: 0x779877A7B0D9E8603169DdbD7836e478b4624789
      * @dev Check https://docs.chain.link/docs/link-token-contracts/ for LINK address for the right network
      */
-    constructor(address _oracle, string memory _jobId) ConfirmedOwner(msg.sender) {
-        oracle = _oracle;
-        jobId = _jobId;
+    constructor() ConfirmedOwner(msg.sender) {
         setChainlinkToken(0x779877A7B0D9E8603169DdbD7836e478b4624789);
     }
 
-    function getFloorPrice(address _tokenAddress) external returns(FloorPrice memory) {
-        if(tokenToFloorPrice[_tokenAddress].deadline >  block.timestamp) {
-            return tokenToFloorPrice[_tokenAddress];
-        }
-
-        requestPrice(_tokenAddress);
-        return tokenToFloorPrice[_tokenAddress];
-    }
-
-    function requestPrice(address _tokenAddress) public onlyOwner {
+    function requestPrice(
+        address _oracle,
+        uint256 _tokenId,
+        string memory _tokenAddress,
+        string memory _jobId
+    ) public onlyOwner {
         Chainlink.Request memory req = buildChainlinkRequest(
-            stringToBytes32(jobId),
+            stringToBytes32(_jobId),
             address(this),
             this.fulfill.selector
         );
-        string memory tokenAddress = toString(_tokenAddress);
-        req.add("tokenAddress", tokenAddress);
+
+        req.add("tokenAddress", _tokenAddress);
         
         // Multiply the result by 1e18 to get value in wei
         int256 toWeiAmount = 10 ** 18;
         req.addInt("times", toWeiAmount);
 
-        sendOperatorRequestTo(oracle, req, ORACLE_PAYMENT);
+        sendOperatorRequestTo(_oracle, req, ORACLE_PAYMENT);
     }
 
     /**
@@ -66,39 +51,15 @@ contract AurumCLient is ChainlinkClient, ConfirmedOwner {
      */
     function fulfill(
         bytes32 _requestId,
-        address _tokenAddress,
         uint256 _floorPrice
     ) public recordChainlinkFulfillment(_requestId) {
         emit RequestFloorPrice(_requestId, _floorPrice);
-        FloorPrice memory priceStruct = FloorPrice({
-            floorPrice: _floorPrice,
-            deadline: block.timestamp + DEADLINE
-        });
-        tokenToFloorPrice[_tokenAddress] = priceStruct;
+        lastRetrievedInfo = _floorPrice;
     }
-
 
     /*
     ========= UTILITY FUNCTIONS ==========
     */
-
-    
-    function toString(address account) internal  pure returns(string memory) {
-        return toString(abi.encodePacked(account));
-    }
-
-    function toString(bytes memory data) internal pure returns(string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-       
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = "0";
-        str[1] = "x";
-        for (uint i = 0; i < data.length; i++) {
-            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-            str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-        }
-        return string(str);
-    }
 
     function contractBalances()
         public

@@ -1,6 +1,5 @@
-const dotenv = require('dotenv');
-import { Express, Request, Response } from "express";
-import express = require("express");
+import dotenv from 'dotenv';
+import express, { Express, Request, Response } from "express";
 import bodyParser = require("body-parser");
 import axios, { AxiosResponse } from "axios";
 import { log } from "console";
@@ -23,7 +22,7 @@ type Output = {
     error: string;
 };
 
-const PORT = process.env.PORT || 8868;
+const PORT = process.env.PORT || 8080;
 const API_KEY = process.env.API_KEY;
 
 const app: Express = express();
