@@ -90,7 +90,7 @@ contract AurumCLient is ChainlinkClient, ConfirmedOwner {
 
     function requestPrice(address _tokenAddress) public ownerOrAurumAddress {
         Chainlink.Request memory req = buildChainlinkRequest(
-            stringToBytes32(jobId),
+            toBytes32(jobId),
             address(this),
             this.fulfill.selector
         );
@@ -232,7 +232,7 @@ contract AurumCLient is ChainlinkClient, ConfirmedOwner {
      * @param source The string to be converted.
      * @return result The bytes32 representation of the string.
      */
-    function stringToBytes32(string memory source)
+    function toBytes32(string memory source)
         private
         pure
         returns (bytes32 result)
