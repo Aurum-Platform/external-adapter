@@ -48,7 +48,7 @@ contract AurumCLient is ChainlinkClient, ConfirmedOwner {
      * @param _tokenAddress The address of the token to get the floor price for.
      * @return The floor price of the token.
      */
-    function getFloorPrice(address _tokenAddress) external returns(FloorPrice memory) {
+    function getFloorPrice(address _tokenAddress) public returns(FloorPrice memory) {
         if(tokenToFloorPrice[_tokenAddress].deadline >  block.timestamp) {
             return tokenToFloorPrice[_tokenAddress];
         }
